@@ -78,17 +78,18 @@ contract NFTMarketplace is ERC721URIStorage {
         _setTokenURI(newTokenId, tokenURI);
 
         //Helper function to update Global variables and emit an event
-        createListedToken(newTokenId, price);
+        listToken(newTokenId, price);
 
         return newTokenId;
     }
-
-    function createListedToken(uint256 tokenId, uint256 price) private {
-        //Make sure the sender sent enough ETH to pay for listing
-        require(msg.value == listPrice, "Hopefully sending the correct price");
-        //Just sanity check
-        require(price > 0, "Make sure the price isn't negative");
-
+    modifier canListToken(uint256 tokenId, uint256 price){
+        // let isOwner =  _ownerOf(tokenId) == msg.sender;
+        // require(ownerOf(tokenId) == msg.sender), "Cannot list token not owned by you");
+        require(msg.value == listPrice, "Attach the correct slisting Fee");
+        require(price > 0, "Price must be greater than 0");        
+        _;
+    }
+    function listToken(uint256 tokenId, uint256 price) public payable canListToken(tokenId, price) {
         //Update the mapping of tokenId's to Token details, useful for retrieval functions
         idToListedToken[tokenId] = ListedToken(
             tokenId,
@@ -171,9 +172,9 @@ contract NFTMarketplace is ERC721URIStorage {
         approve(address(this), tokenId);
 
         //Transfer the listing fee to the marketplace creator
-        payable(owner).transfer(listPrice);
-        //Transfer the proceeds from the sale to the seller of the NFT
-        payable(seller).transfer(msg.value);
+        (bool sentListPrice, ) = payable(owner).call{value: listPrice}(""); 
+        //Transfer the proceeds from the sale to the seller of the NFT 
+        (bool sentSalesValue, ) = payable(seller).call{value: msg.value}(""); 
     }
 
     //We might add a resell token function in the future
