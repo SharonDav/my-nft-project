@@ -82,9 +82,9 @@ contract NFTMarketplace is ERC721URIStorage {
 
         return newTokenId;
     }
-    modifier canListToken(uint256 tokenId, uint256 price){
-        // let isOwner =  _ownerOf(tokenId) == msg.sender;
-        // require(ownerOf(tokenId) == msg.sender), "Cannot list token not owned by you");
+
+    modifier canListToken(uint256 tokenId, uint256 price){      
+        require(ownerOf(tokenId) == msg.sender, "Cannot list token not owned by you");
         require(msg.value == listPrice, "Attach the correct slisting Fee");
         require(price > 0, "Price must be greater than 0");        
         _;
