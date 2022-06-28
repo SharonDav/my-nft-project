@@ -21,8 +21,8 @@ contract NFTMarketplace is ERC721URIStorage {
     //The structure to store info about a listed token
     struct ListedToken {
         uint256 tokenId;
-        address payable owner;
-        address payable seller;
+        address owner;
+        address seller;
         uint256 price;
         bool currentlyListed;
     }
@@ -93,8 +93,8 @@ contract NFTMarketplace is ERC721URIStorage {
         //Update the mapping of tokenId's to Token details, useful for retrieval functions
         idToListedToken[tokenId] = ListedToken(
             tokenId,
-            payable(address(this)),
-            payable(msg.sender),
+            msg.sender,
+            msg.sender,
             price,
             true
         );
@@ -103,7 +103,7 @@ contract NFTMarketplace is ERC721URIStorage {
         //Emit the event for successful transfer. The frontend parses this message and updates the end user
         emit TokenListedSuccess(
             tokenId,
-            address(this),
+            msg.sender,
             msg.sender,
             price,
             true
@@ -138,7 +138,7 @@ contract NFTMarketplace is ERC721URIStorage {
         //Important to get a count of all the NFTs that belong to the user before we can make an array for them
         for(uint i=0; i < totalItemCount; i++)
         {
-            if(idToListedToken[i+1].owner == msg.sender || idToListedToken[i+1].seller == msg.sender){
+            if(idToListedToken[i+1].owner == msg.sender){
                 itemCount += 1;
             }
         }
@@ -146,7 +146,7 @@ contract NFTMarketplace is ERC721URIStorage {
         //Once you have the count of relevant NFTs, create an array then store all the NFTs in it
         ListedToken[] memory items = new ListedToken[](itemCount);
         for(uint i=0; i < totalItemCount; i++) {
-            if(idToListedToken[i+1].owner == msg.sender || idToListedToken[i+1].seller == msg.sender) {
+            if(idToListedToken[i+1].owner == msg.sender) {
                 uint currentId = i+1;
                 ListedToken storage currentItem = idToListedToken[currentId];
                 items[currentIndex] = currentItem;
@@ -161,9 +161,10 @@ contract NFTMarketplace is ERC721URIStorage {
         address seller = idToListedToken[tokenId].seller;
         require(msg.value == price, "Please submit the asking price in order to complete the purchase");
 
-        //update the details of the token
-        idToListedToken[tokenId].currentlyListed = true;
-        idToListedToken[tokenId].seller = payable(msg.sender);
+        //update the details of the token - change owner to the buyer and seller to 0 account
+        idToListedToken[tokenId].currentlyListed = false;
+        idToListedToken[tokenId].owner = payable(msg.sender);
+        idToListedToken[tokenId].seller = address(0);
         _itemsSold.increment();
 
         //Actually transfer the token to the new owner
